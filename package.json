@@ -1,0 +1,35 @@
+{
+  "name": "diff-file-tree",
+  "version": "1.0.0",
+  "description": "Compare two file-trees, get a list of changes, then apply left or right",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard && tape test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfrazee/diff-file-tree.git"
+  },
+  "keywords": [
+    "diff",
+    "compare",
+    "files"
+  ],
+  "author": "Paul Frazee <pfrazee@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pfrazee/diff-file-tree/issues"
+  },
+  "homepage": "https://github.com/pfrazee/diff-file-tree#readme",
+  "dependencies": {
+    "debug": "^2.6.4",
+    "es6-promisify": "^5.0.0",
+    "pump": "^1.0.2",
+    "stream-equal": "^1.0.0"
+  },
+  "devDependencies": {
+    "memory-fs": "^0.4.1",
+    "standard": "^10.0.2",
+    "tape": "^4.6.3"
+  }
+}
