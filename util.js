@@ -29,18 +29,21 @@ exports.wrapFS = function (desc) {
   var mkdir = promisify(desc.fs.mkdir, desc.fs)
   var rmdir = promisify(desc.fs.rmdir, desc.fs)
   var unlink = promisify(desc.fs.unlink, desc.fs)
+  var utimes = desc.fs.utimes ? promisify(desc.fs.utimes, desc.fs) : noop
   return {
     path: desc.path,
     stat (subpath) { return stat(join(desc.path, subpath)) },
     readdir (subpath) { return readdir(join(desc.path, subpath)) },
     createReadStream (subpath, opts) { return desc.fs.createReadStream(join(desc.path, subpath), opts) },
     createWriteStream (subpath, opts) { return desc.fs.createWriteStream(join(desc.path, subpath), opts) },
+    utimes (subpath, atime, mtime) { return utimes(join(desc.path, subpath), atime, mtime) },
     mkdir (subpath) { return mkdir(join(desc.path, subpath)) },
     rmdir (subpath) { return rmdir(join(desc.path, subpath)) },
     unlink (subpath) { return unlink(join(desc.path, subpath)) },
     copyTo (target, subpath) {
       // hyperdrive supports giving the ctime and mtime in the write stream
       // we need to do this for diffs by size & mtime to work
+      // meanwhile the fs uses utimes, so we use that
       return this.stat(subpath).then(st => {
         return new Promise((resolve, reject) => {
           pump(
@@ -48,11 +51,13 @@ exports.wrapFS = function (desc) {
             target.createWriteStream(subpath, {mtime: st.mtime, ctime: st.ctime}),
             err => {
               if (err) reject(err)
-              else resolve(err)
+              else resolve(st)
             }
           )
         })
-      })
+      }).then(st => target.utimes(subpath, st.mtime, st.mtime))
     }
   }
 }
+
+async function noop () {}
