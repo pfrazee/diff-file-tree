@@ -1,5 +1,8 @@
 const test = require('tape')
-const MemoryFileSystem = require('memory-fs')
+const tempy = require('tempy')
+const ScopedFS = require('scoped-fs')
+const fs = require('fs')
+const path = require('path')
 const dft = require('./index')
 
 test('diff', async t => {
@@ -23,7 +26,7 @@ test('applyRight', async t => {
       console.log('## applyRight', leftDesc, rightDesc)
       var left = mock(leftDesc)
       var right = mock(rightDesc)
-      
+
       var diffs = await dft.diff({fs: left}, {fs: right})
       t.deepEqual(sortDiffs(diffs), expected)
 
@@ -45,7 +48,7 @@ test('applyLeft', async t => {
 
       var diffs = await dft.diff({fs: left}, {fs: right})
       t.deepEqual(sortDiffs(diffs), expected)
-      
+
       await dft.applyLeft({fs: left}, {fs: right}, diffs)
       t.same((await dft.diff({fs: left}, {fs: right})).length, 0)
     } catch (err) {
@@ -101,33 +104,33 @@ async function runTests (check) {
     {change: 'del', type: 'file', path: '/a'},
     {change: 'add', type: 'dir', path: '/a'}
   ])
-  await check([['/a', 'foo']], [['/a', 'bar']], [
+  await check([['/a', 'foo']], [['/a', 'barr']], [
     {change: 'mod', type: 'file', path: '/a'}
   ])
-  await check([['/a', 'foo']], [['/a', Buffer.from([1,2,3,4])]], [
+  await check([['/a', 'foo']], [['/a', Buffer.from([1, 2, 3, 4])]], [
     {change: 'mod', type: 'file', path: '/a'}
   ])
-  await check([['/a', Buffer.from([4,3,2,1])]], [['/a', 'bar']], [
+  await check([['/a', Buffer.from([4, 3, 2, 1])]], [['/a', 'bar']], [
     {change: 'mod', type: 'file', path: '/a'}
   ])
-  await check([['/a', Buffer.from([4,3,2,1])]], [['/a',  Buffer.from([1,2,3,4])]], [
+  await check([['/a', Buffer.from([4, 3, 2, 1])]], [['/a', Buffer.from([1, 2, 3, 4, 5])]], [
     {change: 'mod', type: 'file', path: '/a'}
   ])
 }
 
 function mock (desc) {
-  var mfs = new MemoryFileSystem()
+  var sfs = new ScopedFS(tempy.directory())
   desc.forEach(item => {
     if (typeof item === 'string') {
       item = [item, 'content']
     }
     if (item[0].endsWith('/')) {
-      mfs.mkdirSync(item[0])
+      fs.mkdirSync(path.join(sfs.base, item[0]))
     } else {
-      mfs.writeFileSync(item[0], item[1], Buffer.isBuffer(item[1]) ? 'binary' : 'utf8')
+      fs.writeFileSync(path.join(sfs.base, item[0]), item[1], Buffer.isBuffer(item[1]) ? 'binary' : 'utf8')
     }
   })
-  return mfs
+  return sfs
 }
 
 function sortDiffs (diffs) {

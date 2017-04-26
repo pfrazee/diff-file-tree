@@ -24,30 +24,34 @@ exports.wrapFS = function (desc) {
   assert(desc.fs && typeof desc.fs === 'object', 'Invalid filesystem target (.fs)')
   assert(desc.path && typeof desc.path === 'string', 'Invalid filesystem target (.path)')
 
-  var stat    = promisify(desc.fs.stat, desc.fs)
+  var stat = promisify(desc.fs.stat, desc.fs)
   var readdir = promisify(desc.fs.readdir, desc.fs)
-  var mkdir   = promisify(desc.fs.mkdir, desc.fs)
-  var rmdir   = promisify(desc.fs.rmdir, desc.fs)
-  var unlink  = promisify(desc.fs.unlink, desc.fs)
+  var mkdir = promisify(desc.fs.mkdir, desc.fs)
+  var rmdir = promisify(desc.fs.rmdir, desc.fs)
+  var unlink = promisify(desc.fs.unlink, desc.fs)
   return {
     path: desc.path,
-    stat (subpath)              { return stat(join(desc.path, subpath)) },
-    readdir (subpath)           { return readdir(join(desc.path, subpath)) },
-    createReadStream (subpath)  { return desc.fs.createReadStream(join(desc.path, subpath)) },
-    createWriteStream (subpath) { return desc.fs.createWriteStream(join(desc.path, subpath)) },
-    mkdir (subpath)             { return mkdir(join(desc.path, subpath)) },
-    rmdir (subpath)             { return rmdir(join(desc.path, subpath)) },
-    unlink (subpath)            { return unlink(join(desc.path, subpath)) },
+    stat (subpath) { return stat(join(desc.path, subpath)) },
+    readdir (subpath) { return readdir(join(desc.path, subpath)) },
+    createReadStream (subpath, opts) { return desc.fs.createReadStream(join(desc.path, subpath), opts) },
+    createWriteStream (subpath, opts) { return desc.fs.createWriteStream(join(desc.path, subpath), opts) },
+    mkdir (subpath) { return mkdir(join(desc.path, subpath)) },
+    rmdir (subpath) { return rmdir(join(desc.path, subpath)) },
+    unlink (subpath) { return unlink(join(desc.path, subpath)) },
     copyTo (target, subpath) {
-      return new Promise((resolve, reject) => {
-        pump(
-          this.createReadStream(subpath),
-          target.createWriteStream(subpath),
-          err => {
-            if (err) reject(err)
-            else resolve(err)
-          }
-        )
+      // hyperdrive supports giving the ctime and mtime in the write stream
+      // we need to do this for diffs by size & mtime to work
+      return this.stat(subpath).then(st => {
+        return new Promise((resolve, reject) => {
+          pump(
+            this.createReadStream(subpath),
+            target.createWriteStream(subpath, {mtime: st.mtime, ctime: st.ctime}),
+            err => {
+              if (err) reject(err)
+              else resolve(err)
+            }
+          )
+        })
       })
     }
   }

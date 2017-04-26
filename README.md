@@ -38,7 +38,8 @@ Options include:
 
 ```js
 {
-  ignore: null // optional function to ignore file paths on left or right
+  filter: null // optional function to ignore files (function (path) => bool)
+  compareContent: false // set to true to compare by content instead of mtime & size
 }
 ```
 

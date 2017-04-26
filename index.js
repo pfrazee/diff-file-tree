@@ -61,18 +61,26 @@ exports.diff = async function diff (left, right, opts) {
     await addRecursive(path)
   }
 
-  async function diffFile (path) {
+  async function diffFile (path, leftStat, rightStat) {
     debug('diffFile', path)
-    var isEq = await new Promise((resolve, reject) => {
-      streamEqual(
-        left.createReadStream(path),
-        right.createReadStream(path),
-        (err, res) => {
-          if (err) reject(err)
-          else resolve(res)
-        }
+    var isEq
+    if (opts.compareContent) {
+      isEq = await new Promise((resolve, reject) => {
+        streamEqual(
+          left.createReadStream(path),
+          right.createReadStream(path),
+          (err, res) => {
+            if (err) reject(err)
+            else resolve(res)
+          }
+        )
+      })
+    } else {
+      isEq = (
+        (leftStat.size === rightStat.size) &&
+        (leftStat.mtime.getTime() === rightStat.mtime.getTime())
       )
-    })
+    }
     if (!isEq) {
       changes.push({change: 'mod', type: 'file', path})
     }
@@ -118,7 +126,6 @@ exports.diff = async function diff (left, right, opts) {
 }
 
 exports.applyRight = async function applyRight (left, right, changes) {
-
   left = wrapFS(left)
   right = wrapFS(right)
   assert(Array.isArray(changes), 'Valid changes')
