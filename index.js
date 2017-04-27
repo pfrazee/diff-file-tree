@@ -130,7 +130,11 @@ exports.applyRight = async function applyRight (left, right, changes) {
   right = wrapFS(right)
   assert(Array.isArray(changes), 'Valid changes')
 
+  // copies can be done in parallel
+  var copyPromises = []
+
   // apply changes
+  debug('applyRight', changes)
   for (let i = 0; i < changes.length; i++) {
     let d = changes[i]
     let op = d.change + d.type
@@ -144,13 +148,14 @@ exports.applyRight = async function applyRight (left, right, changes) {
     }
     if (op === 'addfile' || op === 'modfile') {
       debug('writeFile', d.path)
-      await left.copyTo(right, d.path)
+      copyPromises.push(left.copyTo(right, d.path))
     }
     if (op === 'delfile') {
       debug('unlink', d.path)
       await right.unlink(d.path)
     }
   }
+  return await Promise.all(copyPromises)
 }
 
 exports.applyLeft = async function applyLeft (left, right, changes) {
@@ -158,7 +163,11 @@ exports.applyLeft = async function applyLeft (left, right, changes) {
   right = wrapFS(right)
   assert(Array.isArray(changes), 'Valid changes')
 
+  // copies can be done in parallel
+  var copyPromises = []
+
   // apply opposite changes, in reverse
+  debug('applyLeft', changes)
   for (let i = changes.length - 1; i >= 0; i--) {
     let d = changes[i]
     let op = d.change + d.type
@@ -176,7 +185,8 @@ exports.applyLeft = async function applyLeft (left, right, changes) {
     }
     if (op === 'modfile' || op === 'delfile') {
       debug('writeFile', d.path)
-      await right.copyTo(left, d.path)
+      copyPromises.push(right.copyTo(left, d.path))
     }
   }
+  return await Promise.all(copyPromises)
 }
