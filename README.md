@@ -39,6 +39,7 @@ Options include:
 ```js
 {
   filter: null // optional function to ignore files (function (path) => bool)
+  shallow: false // dont recurse into folders that need to be added or removed
   compareContent: false // set to true to compare by content instead of mtime & size
 }
 ```

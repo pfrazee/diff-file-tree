@@ -100,8 +100,10 @@ exports.diff = async function diff (left, right, opts) {
       // add dir first
       changes.push({change: 'add', type: 'dir', path})
       // add children second
-      var children = await left.readdir(path)
-      await Promise.all(children.map(name => addRecursive(join(path, name))))
+      if (!opts.shallow) {
+        var children = await left.readdir(path)
+        await Promise.all(children.map(name => addRecursive(join(path, name))))
+      }
     }
   }
 
@@ -116,9 +118,11 @@ exports.diff = async function diff (left, right, opts) {
     if (st.isFile()) {
       changes.push({change: 'del', type: 'file', path})
     } else if (st.isDirectory()) {
-      // del children second
-      var children = await right.readdir(path)
-      await Promise.all(children.map(name => delRecursive(join(path, name))))
+      // del children first
+      if (!opts.shallow) {
+        var children = await right.readdir(path)
+        await Promise.all(children.map(name => delRecursive(join(path, name))))
+      }
       // del dir second
       changes.push({change: 'del', type: 'dir', path})
     }
@@ -155,7 +159,7 @@ exports.applyRight = async function applyRight (left, right, changes) {
       await right.unlink(d.path)
     }
   }
-  return await Promise.all(copyPromises)
+  return Promise.all(copyPromises)
 }
 
 exports.applyLeft = async function applyLeft (left, right, changes) {
@@ -188,7 +192,7 @@ exports.applyLeft = async function applyLeft (left, right, changes) {
       copyPromises.push(right.copyTo(left, d.path))
     }
   }
-  return await Promise.all(copyPromises)
+  return Promise.all(copyPromises)
 }
 
 /**
@@ -213,8 +217,8 @@ function isTimeEqual (left, right) {
   right = +right
 
   // (SR = 'Seconds Resolution')
-  var leftSR = left - left%1000
-  var rightSR = right - right%1000
+  var leftSR = left - left % 1000
+  var rightSR = right - right % 1000
 
   // are one of the timestamps *probably* in seconds resolution?
   if (leftSR === left || rightSR === right) {
