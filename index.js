@@ -63,8 +63,11 @@ exports.diff = async function diff (left, right, opts) {
 
   async function diffFile (path, leftStat, rightStat) {
     debug('diffFile', path)
-    var isEq
-    if (opts.compareContent) {
+    var isEq = (
+      (leftStat.size === rightStat.size) &&
+      (isTimeEqual(leftStat.mtime, rightStat.mtime))
+    )
+    if (!isEq && opts.compareContent) {
       isEq = await new Promise((resolve, reject) => {
         streamEqual(
           left.createReadStream(path),
@@ -75,11 +78,6 @@ exports.diff = async function diff (left, right, opts) {
           }
         )
       })
-    } else {
-      isEq = (
-        (leftStat.size === rightStat.size) &&
-        (isTimeEqual(leftStat.mtime, rightStat.mtime))
-      )
     }
     if (!isEq) {
       changes.push({change: 'mod', type: 'file', path})
