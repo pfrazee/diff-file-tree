@@ -44,10 +44,14 @@ exports.diff = async function diff (left, right, opts) {
       return
     }
     // stat the entry
-    var [leftStat, rightStat] = await Promise.all([
-      left.stat(path),
-      right.stat(path)
+    var [leftStat, leftLStat, rightStat, rightLStat] = await Promise.all([
+      left.stat(path), left.lstat(path),
+      right.stat(path), right.lstat(path)
     ])
+    // abort if either is a symlink
+    if (leftLStat.isSymbolicLink() || rightLStat.isSymbolicLink()) {
+      return
+    }
     // both a file
     if (leftStat.isFile() && rightStat.isFile()) {
       return diffFile(path, leftStat, rightStat)
@@ -95,12 +99,17 @@ exports.diff = async function diff (left, right, opts) {
     if (st.isFile()) {
       changes.push({change: 'add', type: 'file', path})
     } else if (st.isDirectory()) {
-      // add dir first
-      changes.push({change: 'add', type: 'dir', path})
-      // add children second
-      if (!opts.shallow) {
-        var children = await left.readdir(path)
-        await Promise.all(children.map(name => addRecursive(join(path, name))))
+      var lst = await left.lstat(path)
+      if (lst.isSymbolicLink()) {
+        // skip
+      } else {
+        // add dir first
+        changes.push({change: 'add', type: 'dir', path})
+        // add children second
+        if (!opts.shallow) {
+          var children = await left.readdir(path)
+          await Promise.all(children.map(name => addRecursive(join(path, name))))
+        }
       }
     }
   }
@@ -116,13 +125,18 @@ exports.diff = async function diff (left, right, opts) {
     if (st.isFile()) {
       changes.push({change: 'del', type: 'file', path})
     } else if (st.isDirectory()) {
-      // del children first
-      if (!opts.shallow) {
-        var children = await right.readdir(path)
-        await Promise.all(children.map(name => delRecursive(join(path, name))))
+      var lst = await right.lstat(path)
+      if (lst.isSymbolicLink()) {
+        // skip
+      } else {
+        // del children first
+        if (!opts.shallow) {
+          var children = await right.readdir(path)
+          await Promise.all(children.map(name => delRecursive(join(path, name))))
+        }
+        // del dir second
+        changes.push({change: 'del', type: 'dir', path})
       }
-      // del dir second
-      changes.push({change: 'del', type: 'dir', path})
     }
   }
 }

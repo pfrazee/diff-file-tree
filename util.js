@@ -25,6 +25,7 @@ exports.wrapFS = function (desc) {
   assert(desc.path && typeof desc.path === 'string', 'Invalid filesystem target (.path)')
 
   var stat = promisify(desc.fs.stat, desc.fs)
+  var lstat = promisify(desc.fs.lstat || desc.fs.stat, desc.fs)
   var readdir = promisify(desc.fs.readdir, desc.fs)
   var mkdir = promisify(desc.fs.mkdir, desc.fs)
   var rmdir = promisify(desc.fs.rmdir, desc.fs)
@@ -33,6 +34,7 @@ exports.wrapFS = function (desc) {
   return {
     path: desc.path,
     stat (subpath) { return stat(join(desc.path, subpath)) },
+    lstat (subpath) { return lstat(join(desc.path, subpath)) },
     readdir (subpath) { return readdir(join(desc.path, subpath)) },
     createReadStream (subpath, opts) { return desc.fs.createReadStream(join(desc.path, subpath), opts) },
     createWriteStream (subpath, opts) { return desc.fs.createWriteStream(join(desc.path, subpath), opts) },

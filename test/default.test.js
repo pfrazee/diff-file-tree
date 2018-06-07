@@ -28,7 +28,9 @@ test('applyRight', async t => {
       t.deepEqual(sortDiffs(diffs), expected)
 
       await dft.applyRight({fs: left}, {fs: right}, diffs)
-      t.same((await dft.diff({fs: left}, {fs: right})).length, 0)
+      var l = (await dft.diff({fs: left}, {fs: right}))
+      console.log(l)
+      t.same(l.length, 0)
     } catch (err) {
       t.fail(err)
     }
@@ -113,4 +115,7 @@ async function runTests (check) {
   await check([['/a', Buffer.from([4, 3, 2, 1])]], [['/a', Buffer.from([1, 2, 3, 4, 5])]], [
     {change: 'mod', type: 'file', path: '/a'}
   ])
+  await check(['/a*'], [], [])
+  await check([], ['/a*'], [])
+  await check(['/a*'], ['/a'], [])
 }
