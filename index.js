@@ -1,4 +1,5 @@
 var assert = require('assert')
+var {basename} = require('path')
 var streamEqual = require('stream-equal')
 var debug = require('debug')('diff-file-tree')
 var {wrapFS, join, CycleError} = require('./util')
@@ -138,7 +139,7 @@ exports.diff = async function diff (left, right, opts) {
 
   function checkForCycle (st, path) {
     if (!st.ino) return // not all "filesystem" implementations we use have inodes (eg Dat)
-    var id = st.dev + '-' + st.ino
+    var id = `${st.dev}-${st.ino}-${basename(path)}` // include basename because windows apparently gives dup inodes sometimes
     if (seen.has(id)) {
       throw new CycleError(path)
     }
