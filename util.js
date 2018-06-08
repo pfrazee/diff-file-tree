@@ -61,3 +61,12 @@ exports.wrapFS = function (desc) {
 }
 
 async function noop () {}
+
+exports.CycleError = class CycleError extends Error {
+  constructor (path) {
+    var msg = `Aborting file-tree comparison, a symlink or hardlink loop was detected at ${path}`
+    super(msg)
+    this.name = 'CycleError'
+    this.message = msg
+  }
+}

@@ -1,10 +1,11 @@
 var assert = require('assert')
 var streamEqual = require('stream-equal')
 var debug = require('debug')('diff-file-tree')
-var {wrapFS, join} = require('./util')
+var {wrapFS, join, CycleError} = require('./util')
 
 exports.diff = async function diff (left, right, opts) {
   opts = opts || {}
+  var seen = new Set()
   var changes = []
   left = wrapFS(left)
   right = wrapFS(right)
@@ -48,6 +49,9 @@ exports.diff = async function diff (left, right, opts) {
       left.stat(path),
       right.stat(path)
     ])
+    // check for cycles
+    checkForCycle(leftStat, path)
+    checkForCycle(rightStat, path)
     // both a file
     if (leftStat.isFile() && rightStat.isFile()) {
       return diffFile(path, leftStat, rightStat)
@@ -57,8 +61,8 @@ exports.diff = async function diff (left, right, opts) {
       return walk(path)
     }
     // incongruous, remove all in archive then add all in staging
-    await delRecursive(path)
-    await addRecursive(path)
+    await delRecursive(path, true)
+    await addRecursive(path, true)
   }
 
   async function diffFile (path, leftStat, rightStat) {
@@ -84,7 +88,7 @@ exports.diff = async function diff (left, right, opts) {
     }
   }
 
-  async function addRecursive (path) {
+  async function addRecursive (path, isFirstRecursion = false) {
     debug('addRecursive', path)
     if (opts.filter && opts.filter(path)) {
       return
@@ -92,6 +96,9 @@ exports.diff = async function diff (left, right, opts) {
     // find everything at and below the current path in staging
     // they should be added
     var st = await left.stat(path)
+    if (!isFirstRecursion /* when first called from diff(), dont check for a cycle again */) {
+      checkForCycle(st, path)
+    }
     if (st.isFile()) {
       changes.push({change: 'add', type: 'file', path})
     } else if (st.isDirectory()) {
@@ -105,7 +112,7 @@ exports.diff = async function diff (left, right, opts) {
     }
   }
 
-  async function delRecursive (path) {
+  async function delRecursive (path, isFirstRecursion = false) {
     debug('delRecursive', path)
     if (opts.filter && opts.filter(path)) {
       return
@@ -113,6 +120,9 @@ exports.diff = async function diff (left, right, opts) {
     // find everything at and below the current path in the archive
     // they should be removed
     var st = await right.stat(path)
+    if (!isFirstRecursion /* when first called from diff(), dont check for a cycle again */) {
+      checkForCycle(st, path)
+    }
     if (st.isFile()) {
       changes.push({change: 'del', type: 'file', path})
     } else if (st.isDirectory()) {
@@ -124,6 +134,15 @@ exports.diff = async function diff (left, right, opts) {
       // del dir second
       changes.push({change: 'del', type: 'dir', path})
     }
+  }
+
+  function checkForCycle (st, path) {
+    if (!st.ino) return // not all "filesystem" implementations we use have inodes (eg Dat)
+    var id = st.dev + '-' + st.ino
+    if (seen.has(id)) {
+      throw new CycleError(path)
+    }
+    seen.add(id)
   }
 }
 
