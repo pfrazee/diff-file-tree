@@ -6,6 +6,7 @@ var {wrapFS, join, CycleError} = require('./util')
 
 exports.diff = async function diff (left, right, opts) {
   opts = opts || {}
+  var compareContentCache = opts.compareContentCache
   var seen = new Set()
   var changes = []
   left = wrapFS(left)
@@ -73,16 +74,38 @@ exports.diff = async function diff (left, right, opts) {
       (isTimeEqual(leftStat.mtime, rightStat.mtime))
     )
     if (!isEq && opts.compareContent) {
-      isEq = await new Promise((resolve, reject) => {
-        streamEqual(
-          left.createReadStream(path),
-          right.createReadStream(path),
-          (err, res) => {
-            if (err) reject(err)
-            else resolve(res)
-          }
-        )
-      })
+      // try the cache
+      let cacheHit = false
+      if (compareContentCache) {
+        let cacheEntry = compareContentCache[path]
+        if (cacheEntry && cacheEntry.leftMtime === +leftStat.mtime && cacheEntry.rightMtime === +rightStat.mtime) {
+          isEq = cacheEntry.isEq
+          cacheHit = true
+        }
+      }
+
+      // actually compare the files
+      if (!cacheHit) {
+        isEq = await new Promise((resolve, reject) => {
+          streamEqual(
+            left.createReadStream(path),
+            right.createReadStream(path),
+            (err, res) => {
+              if (err) reject(err)
+              else resolve(res)
+            }
+          )
+        })
+      }
+
+      // store in the cache
+      if (compareContentCache && !cacheHit) {
+        compareContentCache[path] = {
+          leftMtime: +leftStat.mtime,
+          rightMtime: +rightStat.mtime,
+          isEq
+        }
+      }
     }
     if (!isEq) {
       changes.push({change: 'mod', type: 'file', path})

@@ -28,6 +28,10 @@ await dft.applyRight('/home/alice/stuff', '/home/alice/things', changes)
 await dft.applyLeft('/home/alice/stuff', '/home/alice/things', changes)
 ```
 
+## Known issues
+
+Files with equal size and mtimes will show as equal, even if their content is different. This is caused by an optimization which can sometimes give false positives.
+
 ## API
 
 #### `var changes = await dft.diff(left, right[, opts])`
@@ -41,6 +45,7 @@ Options include:
   filter: null // optional function to ignore files (function (path) => bool)
   shallow: false // dont recurse into folders that need to be added or removed
   compareContent: false // set to true to compare by content instead of mtime & size
+  compareContentCache: undefined // provide an object to cache file equality tests in memory
 }
 ```
 
