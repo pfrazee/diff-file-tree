@@ -40,22 +40,20 @@ exports.wrapFS = function (desc) {
     mkdir (subpath) { return mkdir(join(desc.path, subpath)) },
     rmdir (subpath) { return rmdir(join(desc.path, subpath)) },
     unlink (subpath) { return unlink(join(desc.path, subpath)) },
-    copyTo (target, subpath) {
+    async copyTo (target, subpath) {
       // hyperdrive supports giving the ctime and mtime in the write stream
       // we need to do this for diffs by size & mtime to work
       // meanwhile the fs uses utimes, so we use that
-      return this.stat(subpath).then(st => {
-        return new Promise((resolve, reject) => {
-          pump(
-            this.createReadStream(subpath),
-            target.createWriteStream(subpath, {mtime: st.mtime, ctime: st.ctime}),
-            err => {
-              if (err) reject(err)
-              else resolve(st)
-            }
-          )
+      var st = await this.stat(subpath)
+      var rs = await this.createReadStream(subpath)
+      var ws = target.createWriteStream(subpath, {mtime: st.mtime, ctime: st.ctime})
+      await new Promise((resolve, reject) => {
+        pump(rs, ws, err => {
+          if (err) reject(err)
+          else resolve()
         })
-      }).then(st => target.utimes(subpath, st.mtime, st.mtime))
+      })
+      return target.utimes(subpath, st.mtime, st.mtime)
     }
   }
 }
