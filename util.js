@@ -46,7 +46,7 @@ exports.wrapFS = function (desc) {
       // meanwhile the fs uses utimes, so we use that
       var st = await this.stat(subpath)
       var rs = await this.createReadStream(subpath)
-      var ws = target.createWriteStream(subpath, {mtime: st.mtime, ctime: st.ctime})
+      var ws = await target.createWriteStream(subpath, {mtime: st.mtime, ctime: st.ctime})
       await new Promise((resolve, reject) => {
         pump(rs, ws, err => {
           if (err) reject(err)
