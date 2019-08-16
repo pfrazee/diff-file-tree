@@ -236,37 +236,8 @@ exports.applyLeft = async function applyLeft (left, right, changes) {
   return Promise.all(copyPromises)
 }
 
-/**
- * isTimeEqual - do a time comparison, converting to seconds resolution if needed
- *
- * This is required because in some operating systems (the macos I'm on)
- * the timestamps are only stored with a resolution in seconds. That means
- * you get a timestamp like 1493251261000.
- *
- * In those cases, you need to drop the milliseconds on the other timestamp
- * in order to get a decent comparison. The downside is, if multiple writes
- * occur in the same second, then this algorithm will not notice that case.
- *
- * The other downside of this algorithm is that we detect seconds-resolution
- * by examining the timestamp. That means on newer machines that just happen
- * to record a write at the second-mark -- a 1 in 1000 chance, so, pretty
- * often -- we'll incorrectly detect SR and lose fidelity.
- */
-
 function isTimeEqual (left, right) {
   left = +left
   right = +right
-
-  // (SR = 'Seconds Resolution')
-  var leftSR = left - left % 1000
-  var rightSR = right - right % 1000
-
-  // are one of the timestamps *probably* in seconds resolution?
-  if (leftSR === left || rightSR === right) {
-    // do a seconds compare then
-    return leftSR === rightSR
-  }
-
-  // do a direct compare
   return left === right
 }
