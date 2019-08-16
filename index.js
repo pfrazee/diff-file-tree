@@ -86,15 +86,13 @@ exports.diff = async function diff (left, right, opts) {
 
       // actually compare the files
       if (!cacheHit) {
+        let ls = await left.createReadStream(path)
+        let rs = await right.createReadStream(path)
         isEq = await new Promise((resolve, reject) => {
-          streamEqual(
-            left.createReadStream(path),
-            right.createReadStream(path),
-            (err, res) => {
-              if (err) reject(err)
-              else resolve(res)
-            }
-          )
+          streamEqual(ls, rs, (err, res) => {
+            if (err) reject(err)
+            else resolve(res)
+          })
         })
       }
 
