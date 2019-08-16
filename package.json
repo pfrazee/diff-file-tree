@@ -1,6 +1,6 @@
 {
   "name": "diff-file-tree",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Compare two file-trees, get a list of changes, then apply left or right",
   "main": "index.js",
   "scripts": {
