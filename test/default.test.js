@@ -9,7 +9,7 @@ test('diff', async t => {
       var left = mock(leftDesc)
       var right = mock(rightDesc)
 
-      t.deepEqual(sortDiffs(await dft.diff({fs: left}, {fs: right})), expected)
+      t.deepEqual(sortDiffs(await dft.diff({fs: left}, {fs: right}, {compareContent: true})), expected)
     } catch (err) {
       t.fail(err)
     }
@@ -24,11 +24,11 @@ test('applyRight', async t => {
       var left = mock(leftDesc)
       var right = mock(rightDesc)
 
-      var diffs = await dft.diff({fs: left}, {fs: right})
+      var diffs = await dft.diff({fs: left}, {fs: right}, {compareContent: true})
       t.deepEqual(sortDiffs(diffs), expected)
 
       await dft.applyRight({fs: left}, {fs: right}, diffs)
-      t.same((await dft.diff({fs: left}, {fs: right})).length, 0)
+      t.same((await dft.diff({fs: left}, {fs: right}, {compareContent: true})).length, 0)
     } catch (err) {
       t.fail(err)
     }
@@ -43,11 +43,11 @@ test('applyLeft', async t => {
       var left = mock(leftDesc)
       var right = mock(rightDesc)
 
-      var diffs = await dft.diff({fs: left}, {fs: right})
+      var diffs = await dft.diff({fs: left}, {fs: right}, {compareContent: true})
       t.deepEqual(sortDiffs(diffs), expected)
 
       await dft.applyLeft({fs: left}, {fs: right}, diffs)
-      t.same((await dft.diff({fs: left}, {fs: right})).length, 0)
+      t.same((await dft.diff({fs: left}, {fs: right}, {compareContent: true})).length, 0)
     } catch (err) {
       t.fail(err)
     }

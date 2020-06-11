@@ -44,6 +44,10 @@ Options include:
 {
   filter: null // optional function to ignore files (function (path) => bool)
   shallow: false // dont recurse into folders that need to be added or removed
+  sizeLimit: {
+    maxSize: undefined // max number of bytes before comparison aborts
+    assumeEq: false // assume == (true) or assume != (false)
+  }
   compareContent: false // set to true to compare by content instead of mtime & size
   compareContentCache: undefined // provide an object to cache file equality tests in memory
 }

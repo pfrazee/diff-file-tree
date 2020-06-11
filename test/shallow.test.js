@@ -9,7 +9,7 @@ test('diff (shallow)', async t => {
       var left = mock(leftDesc)
       var right = mock(rightDesc)
 
-      t.deepEqual(sortDiffs(await dft.diff({fs: left}, {fs: right}, {shallow: true})), expected)
+      t.deepEqual(sortDiffs(await dft.diff({fs: left}, {fs: right}, {shallow: true, compareContent: true})), expected)
     } catch (err) {
       t.fail(err)
     }
