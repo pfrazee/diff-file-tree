@@ -66,3 +66,9 @@ Make `right` equivalent to `left` using the given `changes`. Both `left` and `ri
 #### `await dft.applyLeft(left, right, changes)`
 
 Make `left` equivalent to `right` using the given `changes`. Both `left` and `right` can be an object with custom `{path:, fs:}` as with `diff()`.
+
+#### `dft.applyRightStream(left, right, changes)`
+
+Make `right` equivalent to `left` using the given `changes`. Both `left` and `right` can be an object with custom `{path:, fs:}` as with `diff()`.
+
+Returns a stream which emits each operation as `{op: String, path: String}`. You can cancel the merge-operation by destroying the stream.

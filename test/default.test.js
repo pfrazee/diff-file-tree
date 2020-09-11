@@ -36,6 +36,30 @@ test('applyRight', async t => {
   t.end()
 })
 
+test('applyRightStream', async t => {
+  await runTests(async function check (leftDesc, rightDesc, expected) {
+    try {
+      console.log('## applyRightStream', leftDesc, rightDesc)
+      var left = mock(leftDesc)
+      var right = mock(rightDesc)
+
+      var diffs = await dft.diff({fs: left}, {fs: right}, {compareContent: true})
+      t.deepEqual(sortDiffs(diffs), expected)
+
+      await new Promise((resolve, reject) => {
+        var stream = dft.applyRightStream({fs: left}, {fs: right}, diffs)
+        stream.on('data', console.log)
+        stream.on('error', reject)
+        stream.on('close', resolve)
+      })
+      t.same((await dft.diff({fs: left}, {fs: right}, {compareContent: true})).length, 0)
+    } catch (err) {
+      t.fail(err)
+    }
+  })
+  t.end()
+})
+
 test('applyLeft', async t => {
   await runTests(async function check (leftDesc, rightDesc, expected) {
     try {
