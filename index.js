@@ -226,26 +226,30 @@ exports.applyRightStream = function applyRightStream (left, right, changes) {
     let d = changes[i]
     if (!d) return stream.push(null)
 
-    let op = d.change + d.type
-    if (op === 'adddir') {
-      debug('mkdir', d.path)
-      stream.push({op: 'mkdir', path: d.path})
-      await right.mkdir(d.path)
-    }
-    if (op === 'deldir') {
-      debug('rmdir', d.path)
-      stream.push({op: 'rmdir', path: d.path})
-      await right.rmdir(d.path)
-    }
-    if (op === 'addfile' || op === 'modfile') {
-      debug('writeFile', d.path)
-      stream.push({op: 'writeFile', path: d.path})
-      await left.copyTo(right, d.path)
-    }
-    if (op === 'delfile') {
-      debug('unlink', d.path)
-      stream.push({op: 'unlink', path: d.path})
-      await right.unlink(d.path)
+    try {
+      let op = d.change + d.type
+      if (op === 'adddir') {
+        debug('mkdir', d.path)
+        stream.push({op: 'mkdir', path: d.path})
+        await right.mkdir(d.path)
+      }
+      if (op === 'deldir') {
+        debug('rmdir', d.path)
+        stream.push({op: 'rmdir', path: d.path})
+        await right.rmdir(d.path)
+      }
+      if (op === 'addfile' || op === 'modfile') {
+        debug('writeFile', d.path)
+        stream.push({op: 'writeFile', path: d.path})
+        await left.copyTo(right, d.path)
+      }
+      if (op === 'delfile') {
+        debug('unlink', d.path)
+        stream.push({op: 'unlink', path: d.path})
+        await right.unlink(d.path)
+      }
+    } catch (e) {
+      return stream.destroy(e)
     }
 
     i++
