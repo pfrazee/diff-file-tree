@@ -42,7 +42,7 @@ Options include:
 
 ```js
 {
-  filter: null // optional function to ignore files (function (path) => bool)
+  filter: null // optional function to ignore files (function (path, op) => bool)
   shallow: false // dont recurse into folders that need to be added or removed
   sizeLimit: {
     maxSize: undefined // max number of bytes before comparison aborts

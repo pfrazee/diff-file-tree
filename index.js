@@ -44,7 +44,7 @@ exports.diff = async function diff (left, right, opts) {
 
   async function diff (path) {
     debug('diff', path)
-    if (opts.filter && opts.filter(path)) {
+    if (opts.filter && opts.filter(path, "diff")) {
       return
     }
     // stat the entry
@@ -118,7 +118,7 @@ exports.diff = async function diff (left, right, opts) {
 
   async function addRecursive (path, isFirstRecursion = false) {
     debug('addRecursive', path)
-    if (opts.filter && opts.filter(path)) {
+    if (opts.filter && opts.filter(path, "add")) {
       return
     }
     // find everything at and below the current path in staging
@@ -142,7 +142,7 @@ exports.diff = async function diff (left, right, opts) {
 
   async function delRecursive (path, isFirstRecursion = false) {
     debug('delRecursive', path)
-    if (opts.filter && opts.filter(path)) {
+    if (opts.filter && opts.filter(path, "del")) {
       return
     }
     // find everything at and below the current path in the archive
