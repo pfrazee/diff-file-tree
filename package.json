@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/pfrazee/diff-file-tree#readme",
   "dependencies": {
-    "debug": "^2.6.4",
+    "debug": "^3.1.0",
     "es6-promisify": "^5.0.0",
     "pump": "^1.0.2",
     "stream-equal": "^1.0.0",
